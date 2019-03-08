@@ -1,0 +1,89 @@
+'
+'Example for Compass Click
+'
+'    Date          : avg 2018.
+'    Author        : Katarina Perendic
+'
+'Test configuration STM32 :
+'    
+'    MCU              : STM32F107VCT6
+'    Dev. Board       : EasyMx PRO v7 for STM32
+'    ARM Compiler ver : v6.0.0.0
+'
+'---
+'
+'Description :
+'
+'The application is composed of three sections :
+'
+'- System Initialization - Initializes I2C module and sets RST and INT pin as INPUT
+'- Application Initialization - Initialization driver init and init chip
+'- Application Task - (code snippet) - Read magnet axis data and accel axis data and logs data on USBUART every 1 sec.
+'
+'
+program Click_Compass_STM
+
+include Click_Compass_types
+include Click_Compass_config
+
+dim
+    Accel_axis as int16_t[3] 
+    Magnet_axis as int16_t[3] 
+    demoText as char[50] 
+    
+sub procedure systemInit() 
+
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_INT_PIN, _GPIO_INPUT) 
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_RST_PIN, _GPIO_INPUT) 
+    mikrobus_i2cInit(_MIKROBUS1, @_COMPASS_I2C_CFG[0]) 
+    mikrobus_logInit(_LOG_USBUART_A, 9600) 
+    mikrobus_logWrite("--- System init ---", _LOG_LINE) 
+    Delay_ms(100) 
+
+end sub
+
+sub procedure applicationInit() 
+
+    compass_i2cDriverInit(T_COMPASS_P(@_MIKROBUS1_GPIO), T_COMPASS_P(@_MIKROBUS1_I2C), 0x19, 0x1E) 
+    compass_init() 
+
+end sub
+
+sub procedure applicationTask() 
+
+    compass_readMagnetAxis(@Magnet_axis[0], @Magnet_axis[1], @Magnet_axis[2]) 
+    mikrobus_logWrite("Magnet axis -- X:", _LOG_TEXT) 
+    IntToStr(Magnet_axis[0], demoText) 
+    mikrobus_logWrite(demoText, _LOG_TEXT) 
+    mikrobus_logWrite(" Y:", _LOG_TEXT) 
+    IntToStr(Magnet_axis[1], demoText) 
+    mikrobus_logWrite(demoText, _LOG_TEXT) 
+    mikrobus_logWrite(" Z:", _LOG_TEXT) 
+    IntToStr(Magnet_axis[2], demoText) 
+    mikrobus_logWrite(demoText, _LOG_TEXT) 
+    mikrobus_logWrite(" ", _LOG_LINE) 
+    compass_readAccelAxis(@Accel_axis[0], @Accel_axis[1], @Accel_axis[2]) 
+    mikrobus_logWrite("Accel axis -- X:", _LOG_TEXT) 
+    IntToStr(Accel_axis[0], demoText) 
+    mikrobus_logWrite(demoText, _LOG_TEXT) 
+    mikrobus_logWrite(" Y:", _LOG_TEXT) 
+    IntToStr(Accel_axis[1], demoText) 
+    mikrobus_logWrite(demoText, _LOG_TEXT) 
+    mikrobus_logWrite(" Z:", _LOG_TEXT) 
+    IntToStr(Accel_axis[2], demoText) 
+    mikrobus_logWrite(demoText, _LOG_TEXT) 
+    mikrobus_logWrite(" ", _LOG_LINE) 
+    mikrobus_logWrite(" ", _LOG_LINE) 
+    Delay_ms(1000) 
+
+end sub
+
+main :
+
+    systemInit() 
+    applicationInit() 
+    while (1) 
+        applicationTask() 
+    wend
+
+end.

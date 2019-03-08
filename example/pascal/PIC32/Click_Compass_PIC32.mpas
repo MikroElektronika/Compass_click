@@ -1,0 +1,92 @@
+{*
+Example for Compass Click
+
+    Date          : avg 2018.
+    Author        : Katarina Perendic
+
+Test configuration PIC32 :
+    
+    MCU                : P32MX795F512L
+    Dev. Board         : EasyPIC Fusion v7
+    PIC32 Compiler ver : v4.0.0.0
+
+---
+
+Description :
+
+The application is composed of three sections :
+
+- System Initialization - Initializes I2C module and sets RST and INT pin as INPUT
+- Application Initialization - Initialization driver init and init chip
+- Application Task - (code snippet) - Read magnet axis data and accel axis data and logs data on USBUART every 1 sec.
+
+*}
+program Click_Compass_PIC32;
+
+uses Click_Compass_types, Click_Compass_config;
+
+var
+    Accel_axis : array[3] of int16_t; 
+    Magnet_axis : array[3] of int16_t; 
+    demoText : array[50] of char; 
+    
+procedure systemInit(); 
+begin
+
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_INT_PIN, _GPIO_INPUT); 
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_RST_PIN, _GPIO_INPUT); 
+    mikrobus_i2cInit(_MIKROBUS1, @_COMPASS_I2C_CFG[0]); 
+    mikrobus_logInit(_LOG_USBUART_A, 9600); 
+    mikrobus_logWrite('--- System init ---', _LOG_LINE); 
+    Delay_ms(100); 
+
+end;
+
+procedure applicationInit(); 
+begin
+
+    compass_i2cDriverInit(T_COMPASS_P(@_MIKROBUS1_GPIO), T_COMPASS_P(@_MIKROBUS1_I2C), 0x19, 0x1E); 
+    compass_init(); 
+
+end;
+
+procedure applicationTask(); 
+begin
+
+    compass_readMagnetAxis(@Magnet_axis[0], @Magnet_axis[1], @Magnet_axis[2]); 
+    mikrobus_logWrite('Magnet axis -- X:', _LOG_TEXT); 
+    IntToStr(Magnet_axis[0], demoText); 
+    mikrobus_logWrite(demoText, _LOG_TEXT); 
+    mikrobus_logWrite(' Y:', _LOG_TEXT); 
+    IntToStr(Magnet_axis[1], demoText); 
+    mikrobus_logWrite(demoText, _LOG_TEXT); 
+    mikrobus_logWrite(' Z:', _LOG_TEXT); 
+    IntToStr(Magnet_axis[2], demoText); 
+    mikrobus_logWrite(demoText, _LOG_TEXT); 
+    mikrobus_logWrite(' ', _LOG_LINE); 
+    compass_readAccelAxis(@Accel_axis[0], @Accel_axis[1], @Accel_axis[2]); 
+    mikrobus_logWrite('Accel axis -- X:', _LOG_TEXT); 
+    IntToStr(Accel_axis[0], demoText); 
+    mikrobus_logWrite(demoText, _LOG_TEXT); 
+    mikrobus_logWrite(' Y:', _LOG_TEXT); 
+    IntToStr(Accel_axis[1], demoText); 
+    mikrobus_logWrite(demoText, _LOG_TEXT); 
+    mikrobus_logWrite(' Z:', _LOG_TEXT); 
+    IntToStr(Accel_axis[2], demoText); 
+    mikrobus_logWrite(demoText, _LOG_TEXT); 
+    mikrobus_logWrite(' ', _LOG_LINE); 
+    mikrobus_logWrite(' ', _LOG_LINE); 
+    Delay_ms(1000); 
+
+end;
+
+begin
+
+    systemInit(); 
+    applicationInit(); 
+    while (1) do 
+    begin 
+        applicationTask(); 
+    end;
+
+end.
